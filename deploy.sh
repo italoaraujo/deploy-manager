@@ -63,6 +63,10 @@ if [ "$LOCAL" != "$CANONICAL" ]; then
  
     # Atualiza o projeto 
     git pull "$REMOTE" "$BRANCH"
+
+    # Executa a migrate
+    docker exec "$CONTAINER_NAME" php godocs migrate:install admin
+    docker exec "$CONTAINER_NAME" php godocs migrate:install clientes
     
     # Atualiza a imagens docker 
     docker pull fabricainfo/godocs-manager:nginx-production
@@ -71,10 +75,6 @@ if [ "$LOCAL" != "$CANONICAL" ]; then
     # Recria o container
     docker compose up -d --build
     docker image prune -f
-
-    # Executa a migrate
-    docker exec "$CONTAINER_NAME" php godocs migrate:install admin
-    docker exec "$CONTAINER_NAME" php godocs migrate:install clientes
  
     log "Deploy finalizado com sucesso"
 else

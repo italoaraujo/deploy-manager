@@ -33,18 +33,18 @@ log() {
 
 cd "$PROJECT_PATH"
 
-log "Iniciando deploy"
+echo "Iniciando deploy"
 
 # Evitar execução concorrente
 if [ -f "$LOCK_FILE" ]; then
-    log "[ERROR] Deploy já está em execução."
+    echo "[ERROR] Deploy já está em execução."
     exit 1
 fi
 trap 'rm -f "$LOCK_FILE"' EXIT
 touch "$LOCK_FILE"
 
 
-log "Verificando atualizações na branch $BRANCH..."
+echo "Verificando atualizações na branch $BRANCH..."
 
 git checkout "$BRANCH"
 
@@ -78,5 +78,5 @@ if [ "$LOCAL" != "$CANONICAL" ]; then
  
     log "Deploy finalizado com sucesso"
 else
-    log "Nenhuma ação necessária."
+    echo "Nenhuma ação necessária."
 fi

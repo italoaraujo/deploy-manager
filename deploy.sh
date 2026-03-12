@@ -17,12 +17,24 @@ fi
 PROJECT_NAME="${PROJECT_NAME:-godocs-manager}"
 PROJECT_PATH="${PROJECT_PATH:-/opt/godocs/godocs-manager}"
 CONTAINER_NAME="${CONTAINER_NAME:-godocs-manager}"
+FILE_DOCKER="${FILE_DOCKER:-docker-compose.yml}"
 BRANCH="${BRANCH:-master}"
 REMOTE="${REMOTE:-origin}"
 LOG_FILE="${LOG_FILE:-/var/log/godocs-deploy.log}"
 
 LOCK_FILE="/tmp/godocs-deploy.lock"
 
+
+FORCE=false
+
+for arg in "$@"; do
+    case $arg in
+        -f|--force)
+            FORCE=true
+            shift
+        ;;
+    esac
+done
 
 # Exemplo de uso para teste
 log() {
@@ -56,20 +68,27 @@ git checkout "$BRANCH"
 
 git fetch "$REMOTE"
  
+if [ "$FORCE" = true ] || [ "$(git rev-list HEAD..$REMOTE/$BRANCH --count)" -gt 0 ]; then 
+    
+    log "Iniciando deploy do projeto $PROJECT_NAME"
+
+    if [ "$FORCE" = true ]; then
+        log "Deploy forçado..."
+    fi
  
-if [ "$(git rev-list HEAD..$REMOTE/$BRANCH --count)" -gt 0 ]; then
     log "Atualizando ambiente..."
  
     # Atualiza o projeto 
     git pull "$REMOTE" "$BRANCH"
 
+    # Executa script do projeto
     if [ -f "$SCRIPT_DIR/after/$PROJECT_NAME.sh" ]; then
         log "Executando script pós-deploy..."
         bash "$SCRIPT_DIR/after/$PROJECT_NAME.sh"
     fi
 
     # Recria o container
-    docker compose up -d --build
+    docker compose -f "$FILE_DOCKER" up -d --build 
     docker image prune -f
  
     log "Deploy finalizado com sucesso"

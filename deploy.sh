@@ -14,6 +14,7 @@ fi
 
 
 # Configurações
+PROJECT_NAME="${PROJECT_NAME:-godocs-manager}"
 PROJECT_PATH="${PROJECT_PATH:-/opt/godocs/godocs-manager}"
 CONTAINER_NAME="${CONTAINER_NAME:-godocs-manager}"
 BRANCH="${BRANCH:-master}"
@@ -55,22 +56,17 @@ git checkout "$BRANCH"
 
 git fetch "$REMOTE"
  
-LOCAL=$(git rev-parse HEAD)
-CANONICAL=$(git rev-parse $REMOTE/$BRANCH)
  
-if [ "$LOCAL" != "$CANONICAL" ]; then
+if [ "$(git rev-list HEAD..$REMOTE/$BRANCH --count)" -gt 0 ]; then
     log "Atualizando ambiente..."
  
     # Atualiza o projeto 
     git pull "$REMOTE" "$BRANCH"
 
-    # Executa a migrate
-    docker exec "$CONTAINER_NAME" php godocs migrate:install admin
-    docker exec "$CONTAINER_NAME" php godocs migrate:install clientes
-    
-    # Atualiza a imagens docker 
-    docker pull fabricainfo/godocs-manager:nginx-production
-    docker pull fabricainfo/godocs-manager:nginx-development
+    if [ -f "$SCRIPT_DIR/after/$PROJECT_NAME.sh" ]; then
+        log "Executando script pós-deploy..."
+        bash "$SCRIPT_DIR/after/$PROJECT_NAME.sh"
+    fi
 
     # Recria o container
     docker compose up -d --build
